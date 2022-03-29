@@ -36,35 +36,21 @@ def cars_list(request):
         serializer = CarsSerializer(queryset, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
-        serializer = request.POST.get('plate')
+        serializer = request.POST.get('plate', request.data)
         if len(str(serializer)) == 21:
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+            p = re.compile(r'([A-Z][A-Z][A-Z])-([0-9][0-9][0-9][0-9])')
+            if bool(re.search(p, str(serializer))):
+                serializer1 = CarsSerializer(data=request.data)
+                if serializer1.is_valid():
+                    serializer1.save()
+                    return Response(serializer1.data, status=status.HTTP_201_CREATED)
+                return Response(status=status.status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_404_NOT_FOUND)
 
+# if plate.is_valid():
 
-# @api_view(['GET', 'POST'])
-# def cars_list(request):
-#     if request.method == 'GET':
-#         queryset = models.Cars.objects.all()
-#         serializer = CarsSerializer(queryset, many=True)
-#         return Response(serializer.data)
-#     elif request.method == 'POST':
-#         plate1 = CarsSerializer(plate=request.data)
-#         if len(str(plate1)) == 8:
-#             p = re.compile(r'([A-Z][A-Z][A-Z])-([0-9][0-9][0-9][0-9])')
-#             if bool(re.search(p, str(plate1))):
-#                 serializer = CarsSerializer(data=request.plate1)
-#                 serializer.save()
-#                 return Response(serializer.data, status=status.HTTP_201_CREATED)
-#             return('Placa inválida')
-#         return Response(status=status.HTTP_204_NO_CONTENT)
-
-        # if plate.is_valid():
-
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
