@@ -47,7 +47,7 @@ class Cars_Out(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(status=status.HTTP_411_LENGTH_REQUIRED)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         car_id = self.get_object(pk)
