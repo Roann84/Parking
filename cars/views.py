@@ -1,74 +1,81 @@
-# from rest_framework import viewsets
-# from cars.serializer import CarsSerializer
-# from cars import models
-
-
-# class CarsViewSet(viewsets.ModelViewSet):
-#     serializer_class = CarsSerializer
-#     queryset = models.Cars.objects.all()
-
 from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
-
+from rest_framework.views import APIView
 from cars.serializers import CarsSerializer
 from cars import models
 import re
 
-# @api_view(['GET', 'POST'])
-# def cars_list(request):
-#     if request.method == 'GET':
-#         queryset = models.Cars.objects.all()
-#         serializer = CarsSerializer(queryset, many=True)
-#         return Response(serializer.data)
-#     elif request.method == 'POST':
-#         serializer = CarsSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-@api_view(['GET', 'POST'])
-def cars_list(request):
-    if request.method == 'GET':
+class Cars_List(APIView):
+    def get(self, request):
         queryset = models.Cars.objects.all()
         serializer = CarsSerializer(queryset, many=True)
         return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer = request.POST.get('plate', request.data)
-        if len(str(serializer)) == 21:
+
+    def post(self, request):
+        plate = request.POST.get('plate', request.data)
+        if len(str(plate)) == 21:
             p = re.compile(r'([A-Z][A-Z][A-Z])-([0-9][0-9][0-9][0-9])')
-            if bool(re.search(p, str(serializer))):
-                serializer1 = CarsSerializer(data=request.data)
-                if serializer1.is_valid():
-                    serializer1.save()
-                    return Response(serializer1.data, status=status.HTTP_201_CREATED)
-                return Response(status=status.status.HTTP_400_BAD_REQUEST)
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-# if plate.is_valid():
-
-# return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            if bool(re.search(p, str(plate))):
+                serializer = CarsSerializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_406_NOT_ACCEPTABLE)
+        return Response(status=status.HTTP_411_LENGTH_REQUIRED)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def change_and_delete(request, pk):
-    try:
-        car_id = models.Cars.objects.get(pk=pk)
-    except models.Cars.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+class Cars_Out(APIView):
 
-    if request.method == 'GET':
+    def get_object(self, pk):
+        try:
+            return models.Cars.objects.get(pk=pk)
+        except models.Cars.DoesNotExist:
+            raise NotFound()
+
+    def get(self, request, pk):
+        car_id = self.get_object(pk)
         serializer = CarsSerializer(car_id)
         return Response(serializer.data)
-    elif request.method == 'PUT':
+
+    def put(self, request, pk):
+        car_id = self.get_object(pk)
         serializer = CarsSerializer(car_id, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE':
+        return Response(status=status.HTTP_411_LENGTH_REQUIRED)
+
+    def delete(self, request, pk):
+        car_id = self.get_object(pk)
         car_id.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class Cars_Pay(APIView):
+    def get_object(self, pk):
+        try:
+            return models.Cars.objects.get(pk=pk)
+        except models.Cars.DoesNotExist:
+            raise NotFound()
+
+    def get(self, request, pk):
+        car_id = self.get_object(pk)
+        serializer = CarsSerializer(car_id)
+        return Response(serializer.data)
+
+
+class Cars_Plate(APIView):
+    def get_object(self, plate):
+        try:
+            return models.Cars.objects.get(plate=plate)
+        except models.Cars.DoesNotExist:
+            raise NotFound()
+
+    def get(self, request, plate):
+        car_plate = self.get_object(plate)
+        serializer = CarsSerializer(car_plate)
+        return Response(serializer.data)
